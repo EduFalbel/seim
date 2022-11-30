@@ -85,6 +85,7 @@ def calc_spatial_filter(spatial_coef, N, weights_matrix, inv_matrix_path):
     return spatial_filter
 
 def tc(coefficients: dict, node_data: pd.DataFrame, pair_data: pd.DataFrame, weights_matrix: np.ndarray = np.empty((1, 1)), inv_matrix_path: str = "./tmp/matrix.npy", slx: bool = False) -> pd.DataFrame:
+    '''Given a set of coefficients, weights matrix, and node and pair data for a Spatial Econometric Interaction Model, predict the values for the dependent variable based on the model's expected value equation.'''
     
     spatial_coef, aspatial_coefficients = split_coefficients(coefficients)
 
