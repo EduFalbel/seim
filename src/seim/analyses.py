@@ -8,7 +8,7 @@ from tabulate import tabulate
 from typing import Literal
 import logging
 
-from prediction import calc_weights_matrices
+from seim.prediction import calc_weights_matrices
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
