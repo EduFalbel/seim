@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "siem"
 version = "0.0.1"
 authors = [
-  { name="EduFalbel", email="author@example.com" },
+  { name="EduFalbel" },
 ]
 description = "Prediction and analysis methods for spatial econometric interaction models"
 readme = "README.md"
