@@ -5,6 +5,7 @@ from scipy.stats import gaussian_kde#, rankdata
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
+import os
 from typing import Literal
 import logging
 
@@ -182,3 +183,10 @@ def quantile_cross_table(quartiles: dict[str, dict[str, np.ndarray]], ground_tru
                     .to_string().split("\n")]
                 print(tabulate(lines[1:], headers=lines[0]), file=sf)
                 print("\n\n\n", file=sf)
+            if (latex_dir is not None):
+                try:
+                    os.mkdir(f"{latex_dir}{pred_type}/")
+                except FileExistsError:
+                    pass
+                with open(f"{latex_dir}{pred_type}/{model}.tex", "w") as lx:
+                    print(pd.crosstab(y_true, quartiles[pred_type][model], margins=True, rownames=['Observed'], colnames=['Predicted']).style.to_latex(caption=f"{pred_type} flow tier analysis for {model} model. Lower tier numbers indicate higher flow volume."), file=lx)
