@@ -160,6 +160,17 @@ def analysis_plots(predicted: dict[str, dict[str, np.ndarray]], ground_truth: li
     
     return
 
+def separate_into_tiers(flows: pd.DataFrame, num_tiers: int = 4):
+    flows_tier = pd.DataFrame(flows.copy(deep=True)).sort_values(by="trip_counts", ascending=False)
+    flows_tier["cumulative_prop"] = flows_tier["trip_counts"].cumsum()/flows_tier["trip_counts"].sum()
+
+    bins = np.linspace(0, 1, num_tiers + 1)
+    labels = [i for i in range(num_tiers)]
+
+    flows_tier["tier"] = pd.cut(flows_tier["cumulative_prop"], bins=bins, labels=labels)
+
+    return flows_tier.sort_index()["tier"]
+
 def quantile_cross_table(quartiles: dict[str, dict[str, np.ndarray]], ground_truth: list[np.ndarray], stats_file):
     "Generate quantile comparison tables of predicted vs. observed values and append them to a .txt file."
     
