@@ -3,6 +3,7 @@ import pandas as pd
 from scipy.stats import gaussian_kde#, rankdata
 
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 from tabulate import tabulate
 
 import os
@@ -156,6 +157,12 @@ def analysis_plots(predicted: dict[str, dict[str, np.ndarray]], ground_truth: li
 
             i += 1
         
+        trendline_legend = mlines.Line2D([], [], color="red", linestyle="--", label="Trendline")
+        fig.legend(handles=[trendline_legend], loc="lower right")
+        if (line_45):
+            line_45_legend = mlines.Line2D([], [], color="blue", linestyle="--", label="$y=x$")
+            fig.legend(handles=[line_45_legend], loc="lower left")
+
         fig.supxlabel(f"Observed flows")
         fig.supylabel(f"{y_name.lower().capitalize()}")
         fig.suptitle(f"Scatter plot of observed flows vs. {y_name.lower()} ({pred_type})")
