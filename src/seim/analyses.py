@@ -47,7 +47,7 @@ def transform_predicted(predicted, transformation, list_y_true: list[np.ndarray]
             transformed[pred_type][model] = transformation(predicted[pred_type][model], y_true)
     return transformed
 
-def RMSE_table(col_names, headers, stats_file):
+def RMSE_table(col_names, headers, stats_file, latex_dir = None):
     """Use tabulate to create a table with the models' RMSE and save it to a .txt file."""
 
     # TODO: Make it so it accepts predicted and use a lambda function to calculate the RMSE
@@ -55,6 +55,12 @@ def RMSE_table(col_names, headers, stats_file):
         sf.write("RMSE values:\n\n")
         print(tabulate([(model, *rmse) for model, rmse in col_names.items()], headers=headers), file=sf)
         print("\n\n\n", file=sf)
+
+    if latex_dir is not None:
+        with open(f"{latex_dir}RMSE.tex", "w") as rmse_tex:
+            rmse_tex.write("RMSE values:\n\n")
+            print(tabulate([(model, *rmse) for model, rmse in col_names.items()], headers=headers, tablefmt='latex'), file=rmse_tex)
+            print("\n\n\n", file=rmse_tex)
 
 def moran_plot(names_residuals: dict[str, dict[str, np.ndarray]], weights: list[np.ndarray], moran_dir : str):
     """Create Moran scatterplots for the given residuals and weights matrices and save it to the given directory."""
