@@ -162,6 +162,7 @@ def analysis_plots(predicted: dict[str, dict[str, np.ndarray]], ground_truth: li
     return
 
 def separate_into_tiers(flows: pd.DataFrame, num_tiers: int = 4):
+    """Helper function to separate flows into n tiers, each tier's flows concentrating 1/n of the total trip volume, in descending order."""
     flows_tier = pd.DataFrame(flows.copy(deep=True)).sort_values(by="trip_counts", ascending=False).clip(lower=0)
     flows_tier["cumulative_prop"] = flows_tier["trip_counts"].cumsum()/flows_tier["trip_counts"].sum()
 
