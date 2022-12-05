@@ -174,7 +174,7 @@ def separate_into_tiers(flows: pd.DataFrame, num_tiers: int = 4):
     return flows_tier.sort_index()["tier"]
 
 def quantile_cross_table(quartiles: dict[str, dict[str, np.ndarray]], ground_truth: list[np.ndarray], stats_file, latex_dir = None):
-    "Generate quantile comparison tables of predicted vs. observed values and append them to a .txt file."
+    """Generate quantile comparison tables of predicted vs. observed values and append them to a .txt file."""
     
     for pred_type, y_true in zip(quartiles, ground_truth):
         for model in quartiles[pred_type]:
