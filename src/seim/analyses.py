@@ -190,4 +190,4 @@ def quantile_cross_table(quartiles: dict[str, dict[str, np.ndarray]], ground_tru
                 except FileExistsError:
                     pass
                 with open(f"{latex_dir}{pred_type}/{model}.tex", "w") as lx:
-                    print(pd.crosstab(y_true, quartiles[pred_type][model], margins=True, rownames=['Observed'], colnames=['Predicted']).style.to_latex(caption=f"{pred_type} flow tier analysis for {model} model. Lower tier numbers indicate higher flow volume."), file=lx)
+                    print(pd.crosstab(y_true, quartiles[pred_type][model], margins=True, rownames=['Observed'], colnames=['Predicted']).style.to_latex(caption=f"{pred_type} flow tier analysis for {model} model. Lower tier numbers indicate higher flow volume.", position="H", label=f"table:{pred_type.split('-')[0]}-{model}"), file=lx)
