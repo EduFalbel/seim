@@ -127,7 +127,7 @@ def moran_plot(names_residuals: dict[str, dict[str, np.ndarray]], weights: list[
         fig.supxlabel(f"${epsilon}$")
         fig.supylabel(f"$W_r{epsilon}$")
         fig.suptitle(f"Moran scatter plot of residuals against spatial lags of residuals ({pred_type})")
-        fig.tight_layout()
+        fig.tight_layout(pad=0.5)
         fig.savefig(file_path, bbox_inches='tight')
         plt.close(fig)
 
