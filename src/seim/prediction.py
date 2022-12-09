@@ -144,3 +144,127 @@ def tc(coefficients: dict, node_data: pd.DataFrame, pair_data: pd.DataFrame, wei
     assert spatial_filter.shape[1] == sum_mult.shape[0], f"Spatial shape: {spatial_filter.shape}, var sum shape: {sum_mult.shape}"
 
     return spatial_filter @ np.sum(np.multiply(Z, delta), axis=1)
+
+def trend_signal(flows: np.ndarray, coefficients: dict, node_data: pd.DataFrame, pair_data: pd.DataFrame, weights_matrix: np.ndarray, slx: bool = False) -> pd.DataFrame:
+    spatial_coef, aspatial_coefficients = split_coefficients(coefficients)
+
+    logging.info("Done coef")
+
+    node_data = node_data.reindex(sorted(node_data.columns), axis=1)
+    pair_data = pair_data.reindex(sorted(pair_data.columns), axis=1)
+
+    logging.debug(node_data)
+    logging.debug(pair_data)
+
+    n = node_data.shape[0]
+
+    constant_n, constant_N, constant_I = calc_constants(n)
+
+    assert constant_I.ndim == 1 and constant_I.shape[0] == n ** 2, f"Constant I ndim = {constant_I.ndim}, shape = {constant_I.shape}"
+
+    logging.info("Done constants")
+
+    node_matrix = node_data.drop(columns=["ID"]).to_numpy()
+    if slx:
+        node_matrix = np.hstack((node_matrix, np.matmul(weights_matrix, node_matrix)))
+    
+    explanatory = calc_explanatory_var(constant_n, constant_I, node_matrix) 
+
+    assert len(set([i.shape[0] for i in explanatory])) == 1, f"{set([i.shape[0] for i in explanatory])}"
+
+    logging.info("Done explanatory")
+
+    g = pair_data.drop(columns=["ID_ORIG", "ID_DEST"]).to_numpy()
+
+    logging.debug(g)
+
+    assert len(set([i.shape[0] for i in [constant_N, constant_I, *explanatory]])) == 1, f"{set([i.shape[0] for i in [constant_N, constant_I, *explanatory]])}"
+
+    Z = np.column_stack((constant_N, constant_I, *explanatory, g))
+
+    logging.info("Done Z")
+    logging.debug(Z)
+
+    delta = np.array(list(aspatial_coefficients.values())).flatten()
+
+    assert(delta.shape[0] == Z.shape[1]), f"Delta: {delta.shape[0]}\nZ: {Z.shape[1]}"
+
+    logging.info("Done delta")
+    logging.debug(delta)
+
+    mult = np.multiply(Z, delta)
+    sum_mult = np.sum(mult, axis=1)
+
+    logging.debug(mult)
+    logging.debug(sum_mult)
+
+    return np.sum(np.multiply(Z, delta), axis=1) + (sum([rho * w for (rho, w) in zip(spatial_coef.values(), calc_weights_matrices(weights_matrix))]) @ flows)
+
+def bp(flows, coefficients: dict, node_data: pd.DataFrame, pair_data: pd.DataFrame, weights_matrix: np.ndarray = np.empty((1, 1)), inv_matrix_path: str = "./tmp/matrix.npy", slx: bool = False) -> pd.DataFrame:
+    '''Given a set of coefficients, weights matrix, and node and pair data for a Spatial Econometric Interaction Model, predict the values for the dependent variable based on the model's expected value equation.'''
+    
+    spatial_coef, aspatial_coefficients = split_coefficients(coefficients)
+
+    logging.info("Done coef")
+
+    node_data = node_data.reindex(sorted(node_data.columns), axis=1)
+    pair_data = pair_data.reindex(sorted(pair_data.columns), axis=1)
+
+    logging.debug(node_data)
+    logging.debug(pair_data)
+
+    n = node_data.shape[0]
+
+    spatial_filter = calc_spatial_filter(spatial_coef, n**2, weights_matrix, inv_matrix_path)
+
+    constant_n, constant_N, constant_I = calc_constants(n)
+
+    assert constant_I.ndim == 1 and constant_I.shape[0] == n ** 2, f"Constant I ndim = {constant_I.ndim}, shape = {constant_I.shape}"
+
+    logging.info("Done constants")
+
+    node_matrix = node_data.drop(columns=["ID"]).to_numpy()
+    if slx:
+        node_matrix = np.hstack((node_matrix, np.matmul(weights_matrix, node_matrix)))
+    
+    explanatory = calc_explanatory_var(constant_n, constant_I, node_matrix) 
+
+    assert len(set([i.shape[0] for i in explanatory])) == 1, f"{set([i.shape[0] for i in explanatory])}"
+
+    logging.info("Done explanatory")
+
+    g = pair_data.drop(columns=["ID_ORIG", "ID_DEST"]).to_numpy()
+
+    logging.debug(g)
+
+    assert len(set([i.shape[0] for i in [constant_N, constant_I, *explanatory]])) == 1, f"{set([i.shape[0] for i in [constant_N, constant_I, *explanatory]])}"
+
+    Z = np.column_stack((constant_N, constant_I, *explanatory, g))
+
+    logging.info("Done Z")
+    logging.debug(Z)
+
+    delta = np.array(list(aspatial_coefficients.values())).flatten()
+
+    assert(delta.shape[0] == Z.shape[1]), f"Delta: {delta.shape[0]}\nZ: {Z.shape[1]}"
+
+    logging.info("Done delta")
+    logging.debug(delta)
+
+    mult = np.multiply(Z, delta)
+    sum_mult = np.sum(mult, axis=1)
+
+    logging.debug(mult)
+    logging.debug(sum_mult)
+
+    assert spatial_filter.shape[1] == sum_mult.shape[0], f"Spatial shape: {spatial_filter.shape}, var sum shape: {sum_mult.shape}"
+
+    return #(spatial_filter @ np.sum(np.multiply(Z, delta), axis=1)) - 
+
+def two_stage(tc_coeff: dict, ts_coeff: dict, node_data: pd.DataFrame, pair_data: pd.DataFrame, weights_matrix: np.ndarray = np.empty((1, 1)), inv_matrix_path: str = "./tmp/matrix.npy", slx: bool = False) -> pd.DataFrame:
+    flows = tc(tc_coeff, node_data, pair_data, weights_matrix, inv_matrix_path, slx)
+    return trend_signal(flows, ts_coeff, node_data, pair_data, weights_matrix, slx)
+
+# TODO: Properly define predict method type. Probably using Union[Callable[...], Callable[...]] so it can take methods with different parameters
+def predict(stage1_method, stage2_method, train_node_data: pd.DataFrame, train_pair_data: pd.DataFrame, test_node_data: pd.DataFrame, test_pair_data: pd.DataFrame, weights_spec: np.ndarray = None, inv_matrix_path: str = "./tmp/matrix.npy", slx: bool = False) -> pd.DataFrame:
+    pass
