@@ -9,18 +9,6 @@ library(MASS)
 
 set.seed(42)
 
-read_and_write_data <- function(node_path, pair_path, data_save_dir) {
-    pair_data <- read_csv(pair_path)
-    node_data <- sf::st_read(node_path)
-
-    print(class(node_data))
-
-    write.csv(pair_data, file = paste0(data_save_dir, "pair.csv"), row.names = FALSE)
-    write.csv(st_drop_geometry(node_data), file = paste0(data_save_dir, "node.csv"), row.names = FALSE)
-
-    return(list(pair_data, node_data))
-}
-
 create_weights_matrix <- function(options, node_data) {
     if (as.character(options[["neighbour"]]) == "contiguity") {
         neighbours <- spdep::poly2nb(node_data, queen = options[["queen/k"]])
@@ -38,6 +26,30 @@ create_weights_matrix <- function(options, node_data) {
 
     return(weights_matrix)
 }
+
+read_data <- function(node_path, pair_path, wm_options) {
+    node_data <- sf::st_read(node_path)
+    pair_data <- read_csv(pair_path)
+
+    weights_matrix <- create_weights_matrix(wm_options, node_data)
+
+    # print(class(node_data))
+
+    return(list(node_data, pair_data, weights_matrix))
+}
+
+write_data <- function(node_data, pair_data, weights_matrix, data_save_dir) {
+    write.csv(st_drop_geometry(node_data), file = paste0(data_save_dir, "node.csv"), row.names = FALSE)
+    write.csv(pair_data, file = paste0(data_save_dir, "pair.csv"), row.names = FALSE)
+    write.matrix(weights_matrix, file = paste0(data_save_dir, "weights.txt"))
+}
+
+read_and_write_data <- function(node_path, pair_path, wm_options, data_save_dir) {
+    data <- read_data(node_path, pair_path, wm_options)
+    write_data(data[[1]], data[[2]], data[[3]], data_save_dir)
+    return(data)
+}
+
 
 
 create_cntrl <- function(cntrl_type) {
@@ -88,16 +100,19 @@ estimate_model_params <- function(node_path, pair_path, data_save_path, region_n
         cntrl <- create_cntrl(cntrl_type)
     }
 
-    data <- read_and_write_data(node_path, pair_path, data_save_path)
+    data <- read_and_write_data(node_path, pair_path, wm_options, data_save_path)
     print("Out")
-    pair <- data[[1]]
-    node <- data[[2]]
+    node <- data[[1]]
+    pair <- data[[2]]
+    weights_matrix <- data[[3]]
+
+
     print(class(node))
     print(class(pair))
 
     print(wm_options[["queen/k"]])
 
-    weights_matrix = create_weights_matrix(wm_options, node)
+
 
     net_nodes <- spflow::sp_network_nodes(
         network_id = region_name,
