@@ -62,8 +62,7 @@ def split_coefficients(coefficients: dict) -> tuple[dict]:
     # Join all dictionaries sequentially (maintaining their previous sorting)
     aspatial_coefficients = const_coef | {key : (node_coef | node_lags)[key] for key in node_keys} | pair_coef
 
-    logging.info(f"Spatial: {spatial_coef}\nAspatial: {aspatial_coefficients}")
-    # logging.debug(aspatial_coefficients)
+    logging.debug(f"Spatial: {spatial_coef}\nAspatial: {aspatial_coefficients}")
 
     return (spatial_coef, aspatial_coefficients)
 
