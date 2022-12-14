@@ -8,9 +8,39 @@ import rpy2.robjects as ro
 from rpy2.robjects.packages import STAP
 from functools import partial
 
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+# logger = logging.getLogger()
+# logger.setLevel(logging.DEBUG)
+logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 logging.debug("test")
+
+model_estimation = None
+
+def parse_model_estimation():
+    with open('./model_estimation.r', 'r') as f:
+        string = f.read()
+    global model_estimation
+    model_estimation = STAP(string, "model_estimation")
+
+def verify_model_estimation_exists():
+    """Check if model_estimation.r has already been parsed. If it hasn't, call parser. Allows for 'lazy loading' of the module."""
+    if model_estimation is None:
+        parse_model_estimation()
+
+def estimate_model_params(train_node_path, train_pair_path, temp_data_dir, region_name: str, dependent_var: str = "trip_counts", weights_spec = None):
+    """Basically a wrapper function for the R spflow package"""
+    verify_model_estimation_exists()
+
+    if (weights_spec is None):
+        weights_spec = {
+            "neighbour" : "contiguity",
+            "queen/k" : True,
+            "weight" : "standard",
+            "style" : "W"
+        }
+
+    coef = model_estimation.estimate_model_params(f"{train_node_path}", f"{train_pair_path}", f"{temp_data_dir}", region_name, dependent_var, weights_spec)
+
+    return {key : value for (key, value) in coef.items()}
 
 def split_coefficients(coefficients: dict) -> tuple[dict]: 
     '''Internal use function: splits the given coefficient dictionary into spatial and aspatial components, sorting them in a specific way for later use'''
@@ -32,7 +62,8 @@ def split_coefficients(coefficients: dict) -> tuple[dict]:
     # Join all dictionaries sequentially (maintaining their previous sorting)
     aspatial_coefficients = const_coef | {key : (node_coef | node_lags)[key] for key in node_keys} | pair_coef
 
-    logging.debug(f"Spatial: {spatial_coef}\nAspatial: {aspatial_coefficients}")
+    logging.info(f"Spatial: {spatial_coef}\nAspatial: {aspatial_coefficients}")
+    # logging.debug(aspatial_coefficients)
 
     return (spatial_coef, aspatial_coefficients)
 
@@ -250,7 +281,7 @@ def bp(flows, coefficients: dict, node_data: pd.DataFrame, pair_data: pd.DataFra
 
     delta = np.array(list(aspatial_coefficients.values())).flatten()
 
-    assert(delta.shape[0] == Z.shape[1]), f"Delta: {delta.shape[0]}\nZ: {Z.shape[1]}"
+    assert(delta.shape[0] == Z.shape[1]), f"Delta shape: {delta.shape[0]}\nZ shape: {Z.shape[1]}"
 
     logging.info("Done delta")
     logging.debug(delta)
@@ -269,19 +300,28 @@ def two_stage(tc_coeff: dict, ts_coeff: dict, node_data: pd.DataFrame, pair_data
     flows = tc(tc_coeff, node_data, pair_data, weights_matrix, inv_matrix_path, slx)
     return trend_signal(flows, ts_coeff, node_data, pair_data, weights_matrix, slx)
 
-def iterative(flows, estimate, predict, n = 2):
+
+def write_pair_data(flows, pair_data, dependent_var, path):
+        pair_data[dependent_var] = flows
+        pair_data.to_csv(path, index=False)
+
+def iterative(flows, estimate, predict, write_pair_data, n = 3):
+    
+    write_pair_data(flows)
     
     for i in range(n):
-        coef = {key : value for (key, value) in estimate(flows).items()}
+        logging.info(f"Starting iteration #{i}")
+
+        coef = {key : value for (key, value) in estimate().items()}
         flows = predict(coef)
+        write_pair_data(flows)
+        logging.info(f"Iteration #{i} completed")
     return flows
     
-    
-
 
 # TODO: Properly define predict method type. Probably using Union[Callable[...], Callable[...]] so it can take methods with different parameters
 
-def multi_stage_predict(stage1_prediction_method, stage2_prediction_method, train_node_path: str, train_pair_path: str, test_node_path: str, test_pair_path: str, temp_data_dir: str, stage1_estimation_method = None, stage2_estimation_method = None, weights_spec: dict = None, slx: bool = False, **kwargs) -> pd.DataFrame:
+def multi_stage_predict(stage1_prediction_method, stage2_prediction_method, dependent_var: str, train_node_path: str, train_pair_path: str, test_node_path: str, test_pair_path: str, slx: bool = False, temp_data_dir: str = "/tmp/", **kwargs) -> pd.DataFrame:
     """
     stage1_prediction_method: Callable(coefficients, node_data, pair_data, weights_matrix, *args, **kwargs)
     stage1_estimation_method: one of "SLA", "SLX", "SDM", "Aspatial"
@@ -293,43 +333,42 @@ def multi_stage_predict(stage1_prediction_method, stage2_prediction_method, trai
     """
     
     # Read model_estimation R script and parse it for use
-    with open('./model_estimation.r', 'r') as f:
-        string = f.read()
-    model_estimation = STAP(string, "model_estimation")
+    # with open('./model_estimation.r', 'r') as f:
+    #     string = f.read()
+    # model_estimation = STAP(string, "model_estimation")
+
+    verify_model_estimation_exists()
 
     logging.info("Parsed R script")
 
     # Default weights matrix specification is row-standardized queen contiguity without distance-decay
-    if (weights_spec is None):
-        weights_spec = {
-            "neighbour" : "contiguity",
-            "queen/k" : True,
-            "weight" : "standard",
-            "style" : "W"}
+    # if (weights_spec is None):
+    #     weights_spec = {
+    #         "neighbour" : "contiguity",
+    #         "queen/k" : True,
+    #         "weight" : "standard",
+    #         "style" : "W"}
 
-    weights_spec = ro.vectors.ListVector(weights_spec) 
+    # weights_spec = ro.vectors.ListVector(weights_spec) 
 
     logging.info("Created weights matrix ListVector")
 
     # Do the first stage estimation and prediction ####################################
 
-    coef = model_estimation.estimate_model_params(f"{train_node_path}", f"{train_pair_path}", f"{temp_data_dir}", "boston", "trip_counts", weights_spec)
+    coef = model_estimation.estimate_model_params(node_path=train_node_path, pair_path=train_pair_path, dependent_var=dependent_var, data_save_path=temp_data_dir, **kwargs)
 
     logging.info("Estimated parameters")
 
     coef = {key : value for (key, value) in coef.items()}
 
-    weights_matrix = np.loadtxt(f"{temp_data_dir}weights.txt")
-
-    logging.info("Got weights matrix")
-
     # Writes the testing data to disk so that we can read it with pandas
-    model_estimation.read_and_write_data(test_node_path, test_pair_path, weights_spec, temp_data_dir)
+    model_estimation.read_and_write_data(test_node_path, test_pair_path, temp_data_dir)
+    model_estimation.create_and_write_weights_matrix(node_path=test_node_path, data_save_path=temp_data_dir, **kwargs)
 
     logging.info("Wrote R parsed testing data")
 
     node_data = pd.read_csv(f"{temp_data_dir}/node.csv")
-    pair_data = pd.read_csv(f"{temp_data_dir}/pair.csv")
+    pair_data = pd.read_csv(f"{temp_data_dir}/pair.csv").drop(columns=[dependent_var])
     
     weights_matrix = np.loadtxt(f"{temp_data_dir}weights.txt")
 
@@ -340,10 +379,16 @@ def multi_stage_predict(stage1_prediction_method, stage2_prediction_method, trai
 
     flows = stage1_prediction_method(coefficients=coef, node_data=node_data, pair_data=pair_data, weights_matrix=weights_matrix)
 
-    # Do the second stage estimation and prediction one time (to get the transformed node and pair data and weights matrix) ####################################
+    # pair_data[dependent_var] = flows
+    # pair_data.to_csv(test_pair_path)
+
+    # Define 2nd stage prediction and estimation partial methods (using functools.partials) with the arguments that will not change for every iteration (to clean up the iterative function call) ####################################
 
     partial_stage2_prediction_method = partial(stage2_prediction_method, node_data=node_data, pair_data=pair_data, weights_matrix=weights_matrix)
     
-    partial_stage2_estimation_method = partial(stage2_estimation_method, node_path=test_node_path, pair_path=test_pair_path, wm_options=weights_spec, **kwargs)
+    partial_stage2_estimation_method = partial(model_estimation.estimate_model_params, node_path=test_node_path, pair_path=f"{temp_data_dir}/pair.csv", dependent_var=dependent_var, data_save_path=temp_data_dir, **kwargs)
 
-    return iterative(flows, partial_stage2_estimation_method, partial_stage2_prediction_method)
+    partial_write_pair_data = partial(write_pair_data, pair_data=pair_data.copy(), dependent_var=dependent_var, path=f"{temp_data_dir}/pair.csv")
+
+
+    return iterative(flows, partial_stage2_estimation_method, partial_stage2_prediction_method, partial_write_pair_data)
