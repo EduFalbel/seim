@@ -4,9 +4,14 @@ import numpy as np
 import pandas as pd
 import re
 
+import os
+
+import rpy2
 import rpy2.robjects as ro
 from rpy2.robjects.packages import STAP
 from functools import partial
+
+print(rpy2.rinterface_lib.embedded.get_initoptions())
 
 # logger = logging.getLogger()
 # logger.setLevel(logging.DEBUG)
@@ -320,7 +325,7 @@ def iterative(flows, estimate, predict, write_pair_data, n = 3):
 
 # TODO: Properly define predict method type. Probably using Union[Callable[...], Callable[...]] so it can take methods with different parameters
 
-def multi_stage_predict(stage1_prediction_method, stage2_prediction_method, dependent_var: str, train_node_path: str, train_pair_path: str, test_node_path: str, test_pair_path: str, slx: bool = False, temp_data_dir: str = "/tmp/", **kwargs) -> pd.DataFrame:
+def multi_stage_predict(stage1_prediction_method, stage2_prediction_method, dependent_var: str, train_node_path: str, train_pair_path: str, test_node_path: str, test_pair_path: str, n: int, slx: bool = False, temp_data_dir: str = "/tmp/", **kwargs) -> pd.DataFrame:
     """
     stage1_prediction_method: Callable(coefficients, node_data, pair_data, weights_matrix, *args, **kwargs)
     stage1_estimation_method: one of "SLA", "SLX", "SDM", "Aspatial"
@@ -390,4 +395,4 @@ def multi_stage_predict(stage1_prediction_method, stage2_prediction_method, depe
     partial_write_pair_data = partial(write_pair_data, pair_data=pair_data.copy(), dependent_var=dependent_var, path=f"{temp_data_dir}/pair.csv")
 
 
-    return iterative(flows, partial_stage2_estimation_method, partial_stage2_prediction_method, partial_write_pair_data)
+    return iterative(flows, partial_stage2_estimation_method, partial_stage2_prediction_method, partial_write_pair_data, n)
