@@ -152,7 +152,9 @@ def analysis_plots(predicted: dict[str, dict[str, np.ndarray]], ground_truth: li
             # https://stackoverflow.com/questions/26447191/how-to-add-trendline-in-python-matplotlib-dot-scatter-graphs
             z = np.polyfit(y_true, predicted[pred_type][model], 1)
             p = np.poly1d(z)
-            axs[i].plot([y_true[0], y_true[-1]], [p(y_true[0]), p(y_true[-1])], "r--")
+
+            len_ytrue = len(y_true)
+            axs[i].plot([y_true[0], y_true[len_ytrue-1]], [p(y_true[0]), p(y_true[len_ytrue-1])], "r--")
 
             # https://stackoverflow.com/questions/25118628/add-x-y-45-degree-line-within-matplotlib-axis-limits
             if(line_45): axs[i].axline([0, 0], [1, 1], "b--")
