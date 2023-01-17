@@ -157,14 +157,14 @@ def analysis_plots(predicted: dict[str, dict[str, np.ndarray]], ground_truth: li
             axs[i].plot([y_true[0], y_true[len_ytrue-1]], [p(y_true[0]), p(y_true[len_ytrue-1])], "r--")
 
             # https://stackoverflow.com/questions/25118628/add-x-y-45-degree-line-within-matplotlib-axis-limits
-            if(line_45): axs[i].axline([0, 0], [1, 1], "b--")
+            if(line_45): axs[i].axline([0, 0], [1, 1], color="blue")
 
             i += 1
         
         trendline_legend = mlines.Line2D([], [], color="red", linestyle="--", label="Trendline")
         fig.legend(handles=[trendline_legend], loc="lower right")
         if (line_45):
-            line_45_legend = mlines.Line2D([], [], color="blue", linestyle="--", label="$y=x$")
+            line_45_legend = mlines.Line2D([], [], color="blue", label="$y=x$")
             fig.legend(handles=[line_45_legend], loc="lower left")
 
         fig.supxlabel(f"Observed flows")
