@@ -106,10 +106,6 @@ def moran_plot(names_residuals: dict[str, dict[str, np.ndarray]], weights: list[
                     ax[i].set_title(f"$W_r={title}$") 
                 
 
-                # https://stackoverflow.com/questions/26447191/how-to-add-trendline-in-python-matplotlib-dot-scatter-graphs
-                z = np.polyfit(resid, lagged_res, 1)
-                p = np.poly1d(z)
-                ax[i].plot(resid, p(resid), "r--")
 
                 # https://stackoverflow.com/questions/20105364/how-can-i-make-a-scatter-plot-colored-by-density-in-matplotlib
                 xy = np.vstack([resid, lagged_res])
@@ -119,6 +115,11 @@ def moran_plot(names_residuals: dict[str, dict[str, np.ndarray]], weights: list[
 
                 ax[i].scatter(x, y, c=z)
 
+                # https://stackoverflow.com/questions/26447191/how-to-add-trendline-in-python-matplotlib-dot-scatter-graphs
+                z = np.polyfit(resid, lagged_res, 1)
+                p = np.poly1d(z)
+                ax[i].plot(resid, p(resid), "r--")
+                
                 i = i + 1
 
 
@@ -151,9 +152,10 @@ def analysis_plots(predicted: dict[str, dict[str, np.ndarray]], ground_truth: li
             # https://stackoverflow.com/questions/26447191/how-to-add-trendline-in-python-matplotlib-dot-scatter-graphs
             z = np.polyfit(y_true, predicted[pred_type][model], 1)
             p = np.poly1d(z)
-            axs[i].plot(y_true, p(y_true), "r--")
+            axs[i].plot([y_true[0], y_true[-1]], [p(y_true[0]), p(y_true[-1])], "r--")
 
-            if(line_45): axs[i].plot(y_true, y_true, "b--")
+            # https://stackoverflow.com/questions/25118628/add-x-y-45-degree-line-within-matplotlib-axis-limits
+            if(line_45): axs[i].axline([0, 0], [1, 1], "b--")
 
             i += 1
         
