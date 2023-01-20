@@ -118,10 +118,16 @@ def moran_plot(names_residuals: dict[str, dict[str, np.ndarray]], weights: list[
                 # https://stackoverflow.com/questions/26447191/how-to-add-trendline-in-python-matplotlib-dot-scatter-graphs
                 z = np.polyfit(resid, lagged_res, 1)
                 p = np.poly1d(z)
-                ax[i].plot(resid, p(resid), "r--")
+                ax[i].plot([min(resid), max(resid)], [p(min(resid)), p(max(resid))], "r--")
+
+                ax[i].axline([0, 0], [1, 0], color="black", linewidth=0.6, alpha=0.6)
                 
                 i = i + 1
 
+        trendline_legend = mlines.Line2D([], [], color="red", linestyle="--", label="Trendline")
+        fig.legend(handles=[trendline_legend], loc="lower right")
+        line_0_legend = mlines.Line2D([], [], color="black", linewidth=0.6, alpha=0.6, label="$y=0$")
+        fig.legend(handles=[line_0_legend], loc="lower left")
 
         file_path = f"{moran_dir}{pred_type}.png"
         epsilon = "\\varepsilon"
@@ -147,24 +153,31 @@ def analysis_plots(predicted: dict[str, dict[str, np.ndarray]], ground_truth: li
 
             axs[i].set_title(f"{model}") 
             
-            axs[i].scatter(y_true, predicted[pred_type][model])
+            # axs[i].scatter(y_true, predicted[pred_type][model])
+
+            # https://stackoverflow.com/questions/20105364/how-can-i-make-a-scatter-plot-colored-by-density-in-matplotlib
+            xy = np.vstack([y_true, predicted[pred_type][model]])
+            z = gaussian_kde(xy)(xy)
+            idx = z.argsort()
+            x, y, z = y_true[idx], predicted[pred_type][model][idx], z[idx]
+
+            axs[i].scatter(x, y, c=z)
 
             # https://stackoverflow.com/questions/26447191/how-to-add-trendline-in-python-matplotlib-dot-scatter-graphs
             z = np.polyfit(y_true, predicted[pred_type][model], 1)
             p = np.poly1d(z)
 
-            len_ytrue = len(y_true)
-            axs[i].plot([y_true[0], y_true[len_ytrue-1]], [p(y_true[0]), p(y_true[len_ytrue-1])], "r--")
+            axs[i].plot([min(y_true), max(y_true)], [p(min(y_true)), p(max(y_true))], "r--")
 
             # https://stackoverflow.com/questions/25118628/add-x-y-45-degree-line-within-matplotlib-axis-limits
-            if(line_45): axs[i].axline([0, 0], [1, 1], color="blue")
+            if(line_45): axs[i].axline([0, 0], [1, 1], color="black", linewidth=0.6, alpha=0.6)
 
             i += 1
         
         trendline_legend = mlines.Line2D([], [], color="red", linestyle="--", label="Trendline")
         fig.legend(handles=[trendline_legend], loc="lower right")
         if (line_45):
-            line_45_legend = mlines.Line2D([], [], color="blue", label="$y=x$")
+            line_45_legend = mlines.Line2D([], [], color="black", linewidth=0.6, alpha=0.6, label="$y=x$")
             fig.legend(handles=[line_45_legend], loc="lower left")
 
         fig.supxlabel(f"Observed flows")
