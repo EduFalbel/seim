@@ -1,3 +1,5 @@
+print(file.path(R.home("bin"), "R"))
+
 library(sf)
 library(spdep)
 library(spflow)
@@ -16,7 +18,7 @@ default_wm_options <- function() {
     return(wm_options)
 }
 
-create_weights_matrix <- function(options, node_data) {
+create_weights_matrix <- function(node_data, options) {
     if (as.character(options[["neighbour"]]) == "contiguity") {
         neighbours <- spdep::poly2nb(node_data, queen = options[["queen/k"]])
     } else if (as.character(options[["neighbour"]] == "knn")) {
@@ -34,8 +36,8 @@ create_weights_matrix <- function(options, node_data) {
     return(weights_matrix)
 }
 
-create_and_write_weights_matrix <- function(node_path, data_save_path = "/tmp/", wm_options = NULL, ...) {
-    
+create_and_write_weights_matrix <- function(node_path, data_save_path, wm_options = NULL, ...) {
+
     node_data <- sf::st_read(node_path)
     if (is.null(wm_options)) {
         wm_options <- default_wm_options()
@@ -90,7 +92,7 @@ create_cntrl <- function(cntrl_type) {
     return(cntrl)
 }
 
-estimate_model_params <- function(node_path, pair_path, dependent_var, data_save_path, region_name = "region", node_key = "ID", pair_orig_key = "ID_ORIG", pair_dest_key = "ID_DEST", cntrl_type = "SLA", wm_options = NULL, form = NULL) {
+estimate_model_params <- function(node_path, pair_path, dependent_var, wm_options = NULL, data_save_path = "/tmp/", region_name = "region", node_key = "ID", pair_orig_key = "ID_ORIG", pair_dest_key = "ID_DEST", cntrl_type = "SLA", form = NULL) {
 
 
     if (is.null(form)) {
