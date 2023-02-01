@@ -120,6 +120,9 @@ def moran_plot(names_residuals: dict[str, dict[str, np.ndarray]], weights: list[
                 p = np.poly1d(z)
                 ax[i].plot([min(resid), max(resid)], [p(min(resid)), p(max(resid))], "r--")
 
+                # https://stackoverflow.com/questions/21603585/how-to-add-equation-of-a-line-onto-a-plot-in-python
+                ax[i].text(0.5, 0, "y=%.2fx%+.2f"%(z[0], z[1]), ha="center", va="bottom", transform=ax[i].transAxes, color='orange', fontsize='large', fontweight='semibold')
+
                 ax[i].axline([0, 0], [1, 0], color="black", linewidth=0.6, alpha=0.6)
                 
                 i = i + 1
@@ -168,6 +171,9 @@ def analysis_plots(predicted: dict[str, dict[str, np.ndarray]], ground_truth: li
             p = np.poly1d(z)
 
             axs[i].plot([min(y_true), max(y_true)], [p(min(y_true)), p(max(y_true))], "r--")
+
+            # https://stackoverflow.com/questions/21603585/how-to-add-equation-of-a-line-onto-a-plot-in-python
+            axs[i].text(0.5, 0.75, "y=%.2fx%+.2f"%(z[0], z[1]), ha="center", va="top", transform=axs[i].transAxes, color='black', fontsize='large', fontweight='medium')
 
             # https://stackoverflow.com/questions/25118628/add-x-y-45-degree-line-within-matplotlib-axis-limits
             if(line_45): axs[i].axline([0, 0], [1, 1], color="black", linewidth=0.6, alpha=0.6)
