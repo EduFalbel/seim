@@ -27,14 +27,3 @@ def read_and_write_data(node_path, pair_path, weights_spec, data_save_path):
     model_estimation.read_and_write_data(node_path, pair_path, data_save_path)
     model_estimation.create_and_write_weights_matrix(node_path, data_save_path, weights_spec)
     pass
-
-def weights_matrix_list_vector_builder(weights_spec: dict = None):
-    # Default weights matrix specification is row-standardized queen contiguity without distance-decay
-    if (weights_spec is None):
-        weights_spec = {
-            "neighbour" : "contiguity",
-            "queen/k" : True,
-            "weight" : "standard",
-            "style" : "W"}
-
-    return ro.vectors.ListVector(weights_spec)
