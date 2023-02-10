@@ -13,8 +13,13 @@ set.seed(42)
 
 # Default weights matrix is row-normalized without distance decay based on queen contiguity neighborhood
 default_wm_options <- function() {
-    wm_options <- c("contiguity", TRUE, "standard", "W")
-    names(wm_options) <- c("neighbour", "queen/k", "weight", "style")
+    wm_options <- c(
+        "neighbour" = "knn", # Either contiguity or knn
+        "queen/k" = 8, # Either TRUE/FALSE or integer between 1 and n-1
+        "weight" = "standard", # standard or dist_decay
+        "style" = "W", # B W
+        "type" = "idw"
+    )
     return(wm_options)
 }
 
@@ -62,17 +67,18 @@ write_data <- function(node_data, pair_data, data_save_path) {
 read_and_write_data <- function(node_path, pair_path, data_save_path) {
     data <- read_data(node_path, pair_path)
     write_data(data[[1]], data[[2]], data_save_path)
-    return(data)
 }
 
 create_cntrl <- function(cntrl_type) {
     if (cntrl_type == "SLA") {
        cntrl <- spflow_control(
+        estimation_method = "mle",
         sdm_variables = "none"
        )
     }
     if (cntrl_type == "Aspatial") {
        cntrl <- spflow_control(
+        estimation_method = "mle",
         sdm_variables = "none",
         model = "model_1"
        )
