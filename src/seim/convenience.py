@@ -22,7 +22,7 @@ def default_weights_matrix():
 
     return weights_spec
 
-def estimate_predict(dependent_var: str, train_node_path: str, train_pair_path: str, test_node_path: str, test_pair_path: str, prediction_method, weights_spec: dict = None, temp_data_dir="/tmp", *args, **kwargs) -> pd.DataFrame:
+def estimate_predict(dependent_var: str, train_node_path: str, train_pair_path: str, test_node_path: str, test_pair_path: str, prediction_method, weights_spec: dict = None, temp_data_dir="/tmp/", *args, **kwargs) -> pd.DataFrame:
     """
     
     """
@@ -32,16 +32,18 @@ def estimate_predict(dependent_var: str, train_node_path: str, train_pair_path: 
 
     logging.info("Built weights matrix")
 
-    coef = estimate(train_node_path, train_pair_path, weights_ro, *args, **kwargs)
+    coef = estimate(train_node_path, train_pair_path, dependent_var, weights_ro, *args, **kwargs)
 
     logging.info("Estimated model parameters")
 
     read_and_write_data(test_node_path, test_pair_path, weights_ro, temp_data_dir)
 
-    logging.info("Wrote R-parsed testing data")
 
-    node_data = pd.read_csv(f"{temp_data_dir}/node.csv")
-    pair_data = pd.read_csv(f"{temp_data_dir}/pair.csv").drop(columns=[dependent_var])
+    # create_and_write_weights_matrix(test_node_path, temp_data_dir, weights_ro)
+
+
+    node_data = pd.read_csv(f"{temp_data_dir}/node_r.csv")
+    pair_data = pd.read_csv(f"{temp_data_dir}/pair_r.csv").drop(columns=[dependent_var])
     
     weights_matrix = np.loadtxt(f"{temp_data_dir}weights.txt")
 

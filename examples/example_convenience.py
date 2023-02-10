@@ -5,18 +5,14 @@ import pandas as pd
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_squared_error
-
 import os
 
-from catboost import CatBoostRegressor
-import logging
 import itertools
 from functools import partial
 
 # Setup base directories ########################
 
-results_dir = "/home/eduardo.falbel/scratch/Github/bike-science/spatial_econometrics/results/"
+results_dir = "/mnt/c/Users/ebobrow/Downloads/"
 base_dir = f"{results_dir}8nn_minimal_normalize_intra_log_distance/"
 # base_dir = f"{results_dir}log_poi_census_intra_log_distance/"
 
@@ -57,4 +53,8 @@ predicted = {}
 
 # Spatial econometrics ########################
 
-analyses.add_pred(predicted, "test", "Trend-corrected", convenience.estimate_predict("trip_counts", f"{train_data_dir}node.csv", f"{train_data_dir}pair.csv", f"{test_data_dir}node.csv", f"{test_data_dir}pair.csv", prediction.tc))
+analyses.add_pred(predicted, "test", "Trend-corrected", convenience.estimate_predict("trip_counts", f"{train_data_dir}node.shp", f"{train_data_dir}pair.csv", f"{test_data_dir}node.shp", f"{test_data_dir}pair.csv", prediction.tc))
+
+analyses.add_pred(predicted, "test", "Aspatial", convenience.estimate_predict("trip_counts", f"{train_data_dir}node.shp", f"{train_data_dir}pair.csv", f"{test_data_dir}node.shp", f"{test_data_dir}pair.csv", prediction.tc, cntrl_type="Aspatial"))
+
+# Analysis #######################

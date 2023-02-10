@@ -1,5 +1,7 @@
 import rpy2.robjects as ro
 from rpy2.robjects.packages import STAP
+import logging
+logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 
 model_estimation = None
 
@@ -25,5 +27,11 @@ def estimate_model_params(train_node_path, train_pair_path, temp_data_dir, *args
 def read_and_write_data(node_path, pair_path, weights_spec, data_save_path):
     """Writes the testing data and weights matrix to disk so that we can read it with pandas"""
     model_estimation.read_and_write_data(node_path, pair_path, data_save_path)
+
+    logging.info("Wrote R-parsed testing data")
+
     model_estimation.create_and_write_weights_matrix(node_path, data_save_path, weights_spec)
-    pass
+
+    logging.info("Built and wrote weights matrix")
+
+    return

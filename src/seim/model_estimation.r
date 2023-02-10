@@ -47,21 +47,26 @@ create_and_write_weights_matrix <- function(node_path, data_save_path, wm_option
     if (is.null(wm_options)) {
         wm_options <- default_wm_options()
     }
-    weights_matrix <- create_weights_matrix(wm_options, node_data)
+    weights_matrix <- create_weights_matrix(node_data, wm_options)
     write.matrix(weights_matrix, file = paste0(data_save_path, "weights.txt"))
     return(weights_matrix)
 }
 
 read_data <- function(node_path, pair_path) {
     node_data <- sf::st_read(node_path)
+
+    print(class(node_data))
+    
     pair_data <- read_csv(pair_path)
 
     return(list(node_data, pair_data))
 }
 
 write_data <- function(node_data, pair_data, data_save_path) {
-    write.csv(st_drop_geometry(node_data), file = paste0(data_save_path, "node.csv"), row.names = FALSE)
-    write.csv(pair_data, file = paste0(data_save_path, "pair.csv"), row.names = FALSE)
+    print(data_save_path)
+
+    write.csv(st_drop_geometry(node_data), file = paste0(data_save_path, "node_r.csv"), row.names = FALSE)
+    write.csv(pair_data, file = paste0(data_save_path, "pair_r.csv"), row.names = FALSE)
 }
 
 read_and_write_data <- function(node_path, pair_path, data_save_path) {
@@ -98,8 +103,9 @@ create_cntrl <- function(cntrl_type) {
     return(cntrl)
 }
 
-estimate_model_params <- function(node_path, pair_path, dependent_var, wm_options = NULL, data_save_path = "/tmp/", region_name = "region", node_key = "ID", pair_orig_key = "ID_ORIG", pair_dest_key = "ID_DEST", cntrl_type = "SLA", form = NULL) {
+estimate_model_params <- function(node_path, pair_path, dependent_var, wm_options, data_save_path = "/tmp/", region_name = "region", node_key = "ID", pair_orig_key = "ID_ORIG", pair_dest_key = "ID_DEST", cntrl_type = "SLA", form = NULL) {
 
+    print("In estimate_model_params")
 
     if (is.null(form)) {
         form <- as.formula(paste0(dependent_var, " ~ ."))
@@ -108,20 +114,32 @@ estimate_model_params <- function(node_path, pair_path, dependent_var, wm_option
         form <- as.formula(form)
     }
 
-    print(form)
+    print("Built formula")
+
+    # print(form)
 
     if (is.null(wm_options)) {
         wm_options <- default_wm_options()
     }
 
+    print("Got weights matrix options")
+    print(wm_options)
+    print(class(wm_options))
 
     cntrl <- create_cntrl(cntrl_type)
 
+    print("Built flow_cntrl")
+
     data <- read_data(node_path, pair_path)
+    print("Read data")
     node <- data[[1]]
     pair <- data[[2]]
 
-    weights_matrix <- create_weights_matrix(wm_options, node)
+    print(class(node))
+
+    weights_matrix <- create_weights_matrix(node, wm_options)
+
+    print("Built weights matrix")
 
     print(class(node))
     print(class(pair))
