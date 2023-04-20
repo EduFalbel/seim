@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import rpy2.robjects as ro
 from rpy2.robjects.packages import STAP
 import logging
@@ -6,7 +8,7 @@ logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 model_estimation = None
 
 def parse_model_estimation():
-    with open('./model_estimation.r', 'r') as f:
+    with open(Path(__file__).parent / 'model_estimation.r', 'r') as f:
         string = f.read()
     global model_estimation
     model_estimation = STAP(string, "model_estimation")
